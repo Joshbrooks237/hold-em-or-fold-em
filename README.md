@@ -34,7 +34,7 @@ npm install
 npm run dev
 ```
 
-Open the URL the terminal spits out — usually `http://localhost:5173`. **Click “Next hand.”** Play tight. Play loose. Just don’t whine when the river runs bad.
+Open **`http://localhost:7777`** (dev server is locked to that port). **Click “Next hand.”** Play tight. Play loose. Just don’t whine when the river runs bad.
 
 ### 3. Build for production (when you’re ready to ship)
 

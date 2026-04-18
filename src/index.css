@@ -154,13 +154,12 @@ body {
 
 .seat {
   position: absolute;
-  left: 50%;
-  top: 50%;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
   min-width: 0;
+  transform: translate(-50%, -50%);
 }
 
 .seat-cards {
@@ -303,26 +302,24 @@ body {
   flex-wrap: wrap;
 }
 
-.felt-oval {
+.table-svg {
   position: absolute;
-  inset: 8% 4%;
-  border-radius: 50%;
-  background: radial-gradient(ellipse at 50% 45%, var(--felt-mid) 0%, var(--felt) 62%, #0a2419 100%);
-  box-shadow:
-    inset 0 0 80px rgba(0, 0, 0, 0.45),
-    0 0 0 3px rgba(201, 162, 39, 0.35),
-    0 0 0 10px rgba(61, 40, 23, 0.65),
-    0 24px 48px rgba(0, 0, 0, 0.5);
+  left: 0;
+  top: 0;
+  display: block;
+  z-index: 0;
+  pointer-events: none;
 }
 
 .center-board {
   position: absolute;
   left: 50%;
-  top: 46%;
+  top: 50%;
   transform: translate(-50%, -50%);
   text-align: center;
   z-index: 1;
   width: 95%;
+  pointer-events: none;
 }
 
 @media (max-width: 560px) {
@@ -427,15 +424,6 @@ body {
   .board-row {
     min-height: 62px;
     gap: 5px;
-  }
-
-  .felt-oval {
-    inset: 10% 2%;
-    box-shadow:
-      inset 0 0 60px rgba(0, 0, 0, 0.45),
-      0 0 0 2px rgba(201, 162, 39, 0.35),
-      0 0 0 6px rgba(61, 40, 23, 0.65),
-      0 16px 32px rgba(0, 0, 0, 0.5);
   }
 }
 

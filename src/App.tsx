@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { CenteredTableSvg } from './CenteredTableSvg'
 import { pickBotAction } from './game/ai'
 import {
   applyPlayerAction,
@@ -12,6 +13,11 @@ import {
 } from './game/engine'
 import { scoreToLabel, bestHandScore } from './game/evaluate'
 import type { Card, GameConfig, Player } from './game/types'
+import {
+  computeSeatPositions,
+  computeTableGeometry,
+  type TableGeometry,
+} from './tableLayout'
 
 const CONFIG: GameConfig = {
   smallBlind: 10,
@@ -19,9 +25,6 @@ const CONFIG: GameConfig = {
   startingStack: 2000,
   playerNames: ['You', 'Victor', 'Silas', 'Donovan', 'Marco', 'Enzo'],
 }
-
-/** Polar degrees from top (12 o'clock); first seat is human at bottom */
-const SEAT_DEG = [190, 245, 305, 25, 85, 135]
 
 function suitColor(suit: Card['suit']): string {
   return suit === '♥' || suit === '♦' ? 'var(--ruby)' : '#1a1a1a'
@@ -70,25 +73,23 @@ function Seat({
   player,
   isButton,
   isTurn,
-  deg,
-  radius,
+  x,
+  y,
 }: {
   player: Player
   isButton: boolean
   isTurn: boolean
-  deg: number
-  radius: number
+  x: number
+  y: number
 }) {
-  const rad = (deg * Math.PI) / 180
-  const x = Math.sin(rad) * radius
-  const y = -Math.cos(rad) * radius
   const hole = player.hole
 
   return (
     <div
       className="seat"
       style={{
-        transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`,
+        left: x,
+        top: y,
         zIndex: isTurn ? 2 : 1,
       }}
     >
@@ -110,21 +111,27 @@ function Seat({
 
 export default function App() {
   const [engine, setEngine] = useState<EngineState>(() => createEngine(CONFIG))
-  const [radius, setRadius] = useState(168)
+  const stageRef = useRef<HTMLDivElement>(null)
+  const [geom, setGeom] = useState<TableGeometry | null>(null)
+  const feltGradId = useId().replace(/:/g, '')
 
-  useEffect(() => {
-    const ro = () => {
-      const w = window.innerWidth
-      if (w <= 560) {
-        setRadius(Math.min(108, Math.max(88, w * 0.24)))
-      } else {
-        setRadius(Math.min(200, Math.max(130, w * 0.22)))
-      }
+  useLayoutEffect(() => {
+    const el = stageRef.current
+    if (!el) return
+    const measure = () => {
+      const r = el.getBoundingClientRect()
+      const w = r.width
+      const h = r.height
+      if (w < 24 || h < 24) return
+      setGeom(computeTableGeometry(w, h))
     }
-    ro()
-    window.addEventListener('resize', ro)
-    return () => window.removeEventListener('resize', ro)
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
   }, [])
+
+  const seatPositions = useMemo(() => (geom ? computeSeatPositions(geom) : []), [geom])
 
   const publicState = useMemo(() => toPublicState(engine, false), [engine])
 
@@ -182,8 +189,8 @@ export default function App() {
           <p className="brand-sub">TEXAS HOLD&apos;EM</p>
         </header>
 
-        <div className="table-stage">
-          <div className="felt-oval" aria-hidden />
+        <div className="table-stage" ref={stageRef}>
+          {geom ? <CenteredTableSvg geom={geom} gradientId={`felt-${feltGradId}`} /> : null}
           <div className="center-board">
             <div className="pot-label">POT</div>
             <div className="pot-value">{publicState.pot}</div>
@@ -196,16 +203,20 @@ export default function App() {
             </div>
           </div>
 
-          {CONFIG.playerNames.map((_, i) => (
-            <Seat
-              key={i}
-              player={publicState.players[i]!}
-              isButton={publicState.button === i}
-              isTurn={publicState.currentSeat === i}
-              deg={SEAT_DEG[i]!}
-              radius={radius}
-            />
-          ))}
+          {CONFIG.playerNames.map((_, i) => {
+            const pos = seatPositions[i]
+            if (!pos) return null
+            return (
+              <Seat
+                key={i}
+                player={publicState.players[i]!}
+                isButton={publicState.button === i}
+                isTurn={publicState.currentSeat === i}
+                x={pos.x}
+                y={pos.y}
+              />
+            )
+          })}
         </div>
       </main>
 
